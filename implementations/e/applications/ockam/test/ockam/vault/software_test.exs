@@ -137,4 +137,29 @@ defmodule Ockam.Vault.Software.Tests do
                           6, 109, 155, 8, 203, 90, 153, 38>>
     end
   end
+
+  describe "Ockam.Vault.Software.hkdf_sha256/4" do
+    test "can run natively implemented functions" do
+      {:ok, handle} = Ockam.Vault.Software.default_init
+      attributes = %{type: :buffer, persistence: :ephemeral, purpose: :key_agreement, length: 32}
+
+      {:ok, salt} = Ockam.Vault.Software.secret_generate(handle, attributes)
+      {:ok, ikm} = Ockam.Vault.Software.secret_generate(handle, attributes)
+
+      {:ok, salt_data} = Ockam.Vault.Software.secret_export(handle, salt)
+      {:ok, ikm_data} = Ockam.Vault.Software.secret_export(handle, ikm)
+
+      IO.puts "\n"
+      IO.puts inspect(salt_data)
+      IO.puts inspect(ikm_data)
+
+      {:ok, derived_secrets} = Ockam.Vault.Software.hkdf_sha256(handle, salt, ikm, 2)
+
+      {:ok, data1} = Ockam.Vault.Software.secret_export(handle, Enum.at(derived_secrets, 0))
+      {:ok, data2} = Ockam.Vault.Software.secret_export(handle, Enum.at(derived_secrets, 1))
+
+      IO.puts inspect(data1)
+      IO.puts inspect(data2)
+    end
+  end
 end
